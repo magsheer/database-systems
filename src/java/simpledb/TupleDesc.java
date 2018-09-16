@@ -8,6 +8,8 @@ import java.util.*;
  */
 public class TupleDesc implements Serializable {
 
+    Type[] typeAr;
+    String[] fieldAr;
     /**
      * A help class to facilitate organizing the information of each field
      * */
@@ -24,6 +26,7 @@ public class TupleDesc implements Serializable {
          * The name of the field
          * */
         public final String fieldName;
+
 
         public TDItem(Type t, String n) {
             this.fieldName = n;
@@ -42,7 +45,7 @@ public class TupleDesc implements Serializable {
      * */
     public Iterator<TDItem> iterator() {
         // some code goes here
-        return null;
+        return this.iterator();
     }
 
     private static final long serialVersionUID = 1L;
@@ -59,7 +62,10 @@ public class TupleDesc implements Serializable {
      *            be null.
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
-        // some code goes here
+        this.typeAr  = typeAr;
+        this.fieldAr = fieldAr;
+
+
     }
 
     /**
@@ -71,15 +77,14 @@ public class TupleDesc implements Serializable {
      *            TupleDesc. It must contain at least one entry.
      */
     public TupleDesc(Type[] typeAr) {
-        // some code goes here
+        this.typeAr = typeAr;
     }
 
     /**
      * @return the number of fields in this TupleDesc
      */
     public int numFields() {
-        // some code goes here
-        return 0;
+        return typeAr.length;
     }
 
     /**
@@ -92,7 +97,11 @@ public class TupleDesc implements Serializable {
      *             if i is not a valid field reference.
      */
     public String getFieldName(int i) throws NoSuchElementException {
-        // some code goes here
+        for (int j = 0; j < fieldAr.length ; j++) {
+            if( j == i){
+                return fieldAr[j];
+            }
+        }
         return null;
     }
 
@@ -107,7 +116,11 @@ public class TupleDesc implements Serializable {
      *             if i is not a valid field reference.
      */
     public Type getFieldType(int i) throws NoSuchElementException {
-        // some code goes here
+        for (int j = 0; j < typeAr.length ; j++) {
+            if( j == i){
+                return typeAr[j];
+            }
+        }
         return null;
     }
 
@@ -121,7 +134,11 @@ public class TupleDesc implements Serializable {
      *             if no field with a matching name is found.
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
-        // some code goes here
+        for (int j = 0; j < fieldAr.length ; j++) {
+            if(fieldAr[j].equals(name)){
+                return j;
+            }
+        }
         return 0;
     }
 
@@ -130,8 +147,7 @@ public class TupleDesc implements Serializable {
      *         Note that tuples from a given TupleDesc are of a fixed size.
      */
     public int getSize() {
-        // some code goes here
-        return 0;
+        return 4;
     }
 
     /**
@@ -146,7 +162,7 @@ public class TupleDesc implements Serializable {
      */
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
         // some code goes here
-        return null;
+       return null;
     }
 
     /**
@@ -166,6 +182,7 @@ public class TupleDesc implements Serializable {
     public int hashCode() {
         // If you want to use TupleDesc as keys for HashMap, implement this so
         // that equal objects have equals hashCode() results
+
         throw new UnsupportedOperationException("unimplemented");
     }
 
