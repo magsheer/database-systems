@@ -18,8 +18,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Catalog {
 
-    private Map<Integer, Table> tableMap = new HashMap<>();
-    private int numOfTables = 0;
+    private Map<Integer, Table> tableMap = new ConcurrentHashMap<>();
 
     /**
      * Constructor.

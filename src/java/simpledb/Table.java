@@ -1,12 +1,12 @@
 package simpledb;
 
 import java.util.ArrayList;
+import java.util.Objects;
 
 public class Table {
     private DbFile dbFile;
     private String tableName;
     private String primaryKeyField;
-    private ArrayList<Tuple> tuples = new ArrayList<Tuple>();
     private TupleDesc tupleDesc;
     private int tableId;
 
@@ -50,11 +50,20 @@ public class Table {
         this.primaryKeyField = primaryKeyField;
     }
 
-    public ArrayList<Tuple> getTuples() {
-        return tuples;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Table table = (Table) o;
+        return getTableId() == table.getTableId() &&
+                Objects.equals(getDbFile(), table.getDbFile()) &&
+                Objects.equals(getTableName(), table.getTableName()) &&
+                Objects.equals(getPrimaryKeyField(), table.getPrimaryKeyField()) &&
+                Objects.equals(getTupleDesc(), table.getTupleDesc());
     }
 
-    public void setTuples(ArrayList<Tuple> tuples) {
-        this.tuples = tuples;
+    @Override
+    public int hashCode() {
+        return Objects.hash(getDbFile(), getTableName(), getPrimaryKeyField(), getTupleDesc(), getTableId());
     }
 }

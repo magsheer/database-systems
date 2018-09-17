@@ -121,7 +121,7 @@ public class TupleDesc implements Serializable {
                 return typeAr[j];
             }
         }
-        return null;
+        throw new NoSuchElementException("Not a valid field reference");
     }
 
     /**
@@ -139,7 +139,7 @@ public class TupleDesc implements Serializable {
                 return j;
             }
         }
-        return 0;
+        throw new NoSuchElementException("Field not found");
     }
 
     /**
@@ -147,7 +147,8 @@ public class TupleDesc implements Serializable {
      *         Note that tuples from a given TupleDesc are of a fixed size.
      */
     public int getSize() {
-        return 4;
+       if(typeAr[0].name().equals(Type.INT_TYPE.name())) return Type.INT_TYPE.getLen();
+       else return Type.STRING_TYPE.getLen();
     }
 
     /**
@@ -162,7 +163,7 @@ public class TupleDesc implements Serializable {
      */
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
         // some code goes here
-       return null;
+       return new TupleDesc(td1.typeAr);
     }
 
     /**
@@ -176,25 +177,21 @@ public class TupleDesc implements Serializable {
      */
     public boolean equals(Object o) {
         // some code goes here
-    	
-    		Type[] a = this.typeAr;
-    		Type[] b = this.typeAr;
-    		
-    		if(a.length != b.length)
-    			return false;
-    		else {
-    			for(int i = 0; i< a.length; i++)
-    				if(a[i]!=b[i])
-    					return false;
-    		}
-    		return true;    	
+    	if(this == o) return true;
+    	if(o == null || o.getClass() != getClass()) return false;
+    	TupleDesc td = (TupleDesc)o;
+    	if(td.typeAr.length != typeAr.length) return false;
+    	for(int i=0; i < td.typeAr.length; i++){
+    	    if(td.typeAr[i] != typeAr[i])
+    	        return false;
+        }
+        return true;
     }
 
     public int hashCode() {
         // If you want to use TupleDesc as keys for HashMap, implement this so
         // that equal objects have equals hashCode() results
-
-        throw new UnsupportedOperationException("unimplemented");
+       return Objects.hash(typeAr, fieldAr);
     }
 
     /**
