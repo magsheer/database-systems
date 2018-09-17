@@ -20,6 +20,7 @@ public class BufferPool {
     private static final int PAGE_SIZE = 4096;
 
     private static int pageSize = PAGE_SIZE;
+    private int numPages;
     
     /** Default number of pages passed to the constructor. This is used by
     other classes. BufferPool should use the numPages argument to the
@@ -33,6 +34,7 @@ public class BufferPool {
      */
     public BufferPool(int numPages) {
         // some code goes here
+        this.numPages = numPages;
     }
     
     public static int getPageSize() {
@@ -68,6 +70,7 @@ public class BufferPool {
         throws TransactionAbortedException, DbException {
         // some code goes here
         return null;
+
     }
 
     /**
