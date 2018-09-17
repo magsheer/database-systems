@@ -9,12 +9,20 @@ public class Table {
     private String primaryKeyField;
     private TupleDesc tupleDesc;
     private int tableId;
+    
+    public Table(DbFile dbFile, String tableName, String primaryKeyField) {
+		this.dbFile = dbFile;
+		this.tableName = tableName;
+		this.primaryKeyField = primaryKeyField;
+		this.setTupleDesc(dbFile.getTupleDesc());
+		this.setTableId(dbFile.getId());
+    }
 
-    public DbFile getDbFile() {
+	public DbFile getDbFile() {
         return dbFile;
     }
 
-    public void setDbFile(DbFile dbFile) {
+    private void setDbFile(DbFile dbFile) {
         this.dbFile = dbFile;
     }
 
@@ -22,7 +30,7 @@ public class Table {
         return tableId;
     }
 
-    public void setTableId(int tableId) {
+    private void setTableId(int tableId) {
         this.tableId = tableId;
     }
 
@@ -30,7 +38,7 @@ public class Table {
         return tupleDesc;
     }
 
-    public void setTupleDesc(TupleDesc tupleDesc) {
+    private void setTupleDesc(TupleDesc tupleDesc) {
         this.tupleDesc = tupleDesc;
     }
 
@@ -38,7 +46,7 @@ public class Table {
         return tableName;
     }
 
-    public void setTableName(String tableName) {
+    private void setTableName(String tableName) {
         this.tableName = tableName;
     }
 
@@ -46,7 +54,7 @@ public class Table {
         return primaryKeyField;
     }
 
-    public void setPrimaryKeyField(String primaryKeyField) {
+    private void setPrimaryKeyField(String primaryKeyField) {
         this.primaryKeyField = primaryKeyField;
     }
 
