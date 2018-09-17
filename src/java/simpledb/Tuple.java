@@ -86,12 +86,14 @@ public class Tuple implements Serializable {
     public String toString() {
         // some code goes here
     	
-    	String toReturn = "";
+    	int fieldListSize = this.fieldList.size();
+    	StringBuilder toReturn = new StringBuilder();
     	
-    	for(int i =0; i < this.fieldList.size(); i++)
-    		toReturn += fieldList.get(i) + " ";  
+    	for(int i =0; i < fieldListSize; i++)
+    		toReturn.append(fieldList.get(i).toString() +" ");
     	
-        throw new UnsupportedOperationException("Implement this");
+    	return toReturn.toString().trim();    	
+//        throw new UnsupportedOperationException("Implement this");
     }
 
     /**

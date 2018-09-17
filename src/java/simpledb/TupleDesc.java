@@ -176,7 +176,18 @@ public class TupleDesc implements Serializable {
      */
     public boolean equals(Object o) {
         // some code goes here
-        return false;
+    	
+    		Type[] a = this.typeAr;
+    		Type[] b = this.typeAr;
+    		
+    		if(a.length != b.length)
+    			return false;
+    		else {
+    			for(int i = 0; i< a.length; i++)
+    				if(a[i]!=b[i])
+    					return false;
+    		}
+    		return true;    	
     }
 
     public int hashCode() {
@@ -195,6 +206,16 @@ public class TupleDesc implements Serializable {
      */
     public String toString() {
         // some code goes here
-        return "";
+    	StringBuilder toReturn = new StringBuilder();
+    	int typeFieldSize = typeAr.length;
+    	
+    	for (int i = 0; i< typeFieldSize; i++) {
+    		
+    		if(fieldAr!=null)
+    			toReturn.append(fieldAr[i] + "("+ typeAr[i] + ")" );
+    	}
+        
+    	System.out.println(toReturn.toString());
+    	return toReturn.toString();
     }
 }
