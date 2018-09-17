@@ -92,6 +92,7 @@ public class TupleDesc implements Serializable {
      * @throws NoSuchElementException if i is not a valid field reference.
      */
     public String getFieldName(int i) throws NoSuchElementException {
+
         if(fieldAr == null || i > fieldAr.length){
             throw new NoSuchElementException("Invalid field reference. Field name not found");
         }
@@ -101,7 +102,7 @@ public class TupleDesc implements Serializable {
                 return fieldAr[j];
             }
         }
-
+        
         throw new NoSuchElementException("Invalid field reference. Field name not found");
     }
 
@@ -173,6 +174,7 @@ public class TupleDesc implements Serializable {
         System.arraycopy(td2.fieldAr, 0, mergeFields, td1.fieldAr.length, td2.fieldAr.length);
         
         return new TupleDesc(mergeTypes,mergeFields);
+
     }
 
     /**
