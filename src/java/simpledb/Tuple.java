@@ -11,6 +11,7 @@ import java.util.*;
 public class Tuple implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    
     private TupleDesc tupleDesc;
     private RecordId recordId;
     private ArrayList<Field> fieldList = new ArrayList<Field>();
@@ -24,6 +25,7 @@ public class Tuple implements Serializable {
      */
     public Tuple(TupleDesc td) {
         this.tupleDesc = td;
+        
         for (int i = 0; i <= td.numFields(); i++)
         	fieldList.add(i, null);
     }
@@ -86,11 +88,10 @@ public class Tuple implements Serializable {
     public String toString() {
         // some code goes here
     	
-    	int fieldListSize = this.fieldList.size();
     	StringBuilder toReturn = new StringBuilder();
     	
-    	for(int i =0; i < fieldListSize; i++)
-    		toReturn.append(fieldList.get(i).toString() +" ");
+    	for(int i =0; i < this.fieldList.size(); i++)
+    		toReturn.append(fieldList.get(i).toString() + " ");
     	
     	return toReturn.toString().trim();    	
 //        throw new UnsupportedOperationException("Implement this");
@@ -110,6 +111,6 @@ public class Tuple implements Serializable {
      * */
     public void resetTupleDesc(TupleDesc td)
     {
-        td = null;
+        this.tupleDesc = td;
     }
 }
