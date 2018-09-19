@@ -40,7 +40,7 @@ public class HeapFileIterator extends AbstractDbFileIterator{
 		if(tupleIterator.hasNext())
 			return tupleIterator.next();
 		//if there are more pages in the same file
-		if(pageIndex > heapFile.numPages()) {
+		if(pageIndex < heapFile.numPages()) {
 			HeapPageId pid = new HeapPageId(heapFile.getId(), pageIndex++);
 			Database.getBufferPool();
 			HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(this.tid,pid,Permissions.READ_ONLY);

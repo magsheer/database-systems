@@ -80,9 +80,14 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
         // some code goes here
-        if (bufferPoolMap.containsKey(pid)) return bufferPoolMap.get(pid);
+        if (bufferPoolMap.containsKey(pid))
+        	return bufferPoolMap.get(pid);
         else {
-            return bufferPoolMap.put(pid, Database.getCatalog().getDatabaseFile(pid.getTableId()).readPage(pid));
+        	int td = pid.getTableId();
+        	DbFile db = Database.getCatalog().getDatabaseFile(td);
+        	Page p = db.readPage(pid);
+            bufferPoolMap.put(pid, p);
+            return p;
         }
 
     }
