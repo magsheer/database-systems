@@ -1,5 +1,6 @@
 package simpledb;
 
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.io.*;
 
@@ -69,7 +70,7 @@ public class HeapPage implements Page {
      */
     private int getNumTuples() {
         // some code goes here
-        return (int) Math.floor((BufferPool.getPageSize() * 8) / ((td.getSize() * 8) + 1));
+        return (int) Math.floor((BufferPool.getPageSize() * 8.0) / (td.getSize() * 8.0 + 1));
 
     }
 
@@ -80,8 +81,7 @@ public class HeapPage implements Page {
      */
     private int getHeaderSize() {
         // some code goes here
-
-        return (int) Math.ceil(getNumTuples() / 8);
+        return (int) Math.ceil(getNumTuples() / 8.0);
 
     }
 
@@ -115,7 +115,7 @@ public class HeapPage implements Page {
      */
     public HeapPageId getId() {
         // some code goes here
-        return this.pid;
+        return pid;
     }
 
     /**
@@ -287,10 +287,13 @@ public class HeapPage implements Page {
      */
     public int getNumEmptySlots() {
         // some code goes here
-        for (byte b : header) {
-            System.out.println(Integer.toBinaryString(b & 255 | 256).substring(1));
+        int toReturn = 0;
+        for (int i = 0; i < numSlots; i++) {
+            if (!isSlotUsed(i)) {
+                toReturn++;
+            }
         }
-        return 0;
+        return toReturn;
     }
 
     /**
@@ -298,7 +301,9 @@ public class HeapPage implements Page {
      */
     public boolean isSlotUsed(int i) {
         // some code goes here
-        return false;
+        int headerByte = i / 8;
+        return ((header[headerByte] >> (i % 8)) & 1) == 1;
+
     }
 
     /**
@@ -315,7 +320,28 @@ public class HeapPage implements Page {
      */
     public Iterator<Tuple> iterator() {
         // some code goes here
-        return null;
+        Iterator<Tuple> it = new Iterator<Tuple>() {
+            int index = 0;
+
+            @Override
+            public Tuple next() {
+                // TODO Auto-generated method stub
+                return tuples[index++];
+            }
+
+            @Override
+            public boolean hasNext() {
+                // TODO Auto-generated method stub
+                return index < numSlots && !isSlotUsed(index);
+            }
+
+            @Override
+            public void remove() {
+                throw new UnsupportedOperationException();
+            }
+        };
+
+        return it;
     }
 
 }
