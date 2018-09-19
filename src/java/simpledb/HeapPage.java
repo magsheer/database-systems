@@ -319,6 +319,7 @@ public class HeapPage implements Page {
      * (note that this iterator shouldn't return tuples in empty slots!)
      */
     public Iterator<Tuple> iterator() {
+
         // some code goes here
         Iterator<Tuple> it = new Iterator<Tuple>() {
             int index = 0;
@@ -332,7 +333,10 @@ public class HeapPage implements Page {
             @Override
             public boolean hasNext() {
                 // TODO Auto-generated method stub
-                return index < numSlots && !isSlotUsed(index);
+                while (index < numSlots && !isSlotUsed(index)) {
+                    index++;
+                }
+                return index < numSlots;
             }
 
             @Override
