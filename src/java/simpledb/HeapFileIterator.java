@@ -3,27 +3,68 @@ package simpledb;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+//public class HeapFileIterator extends AbstractDbFileIterator{
+//
+//	@Override
+//	public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
+//		// TODO Auto-generated method stub
+//		return super.next();
+//	}
+//	
+//	@Override
+//	public boolean hasNext() throws DbException, TransactionAbortedException {
+//		// TODO Auto-generated method stub
+//		return super.hasNext();
+//	}
+//	
+//	@Override
+//	public void open() throws DbException, TransactionAbortedException {
+//		// TODO Auto-generated method stub
+//		
+//	}
+//
+//	@Override
+//	public void rewind() throws DbException, TransactionAbortedException {
+//		// TODO Auto-generated method stub
+//		
+//	}
+//	
+//	@Override
+//	public void close() {
+//		// TODO Auto-generated method stub
+//		super.close();
+//	}
+//
+//	@Override
+//	protected Tuple readNext() throws DbException, TransactionAbortedException {
+//		// TODO Auto-generated method stub
+//		return null;
+//	}
+//}
+
+
 public class HeapFileIterator extends AbstractDbFileIterator {
 
     private HeapFile heapFile;
     private TransactionId tid;
     private Iterator<Tuple> tupleIterator;
-    private int pageIndex;
+    private int pageId;
 
     public HeapFileIterator(TransactionId tid, HeapFile heapFile) {
         this.tid = tid;
         this.heapFile = heapFile;
-        this.pageIndex = 0;
+        this.pageId = -1;
+        this.tupleIterator = null;
     }
 
     @Override
     public void open() throws DbException, TransactionAbortedException {
         //opens the iterator
-        pageIndex = 0;
-        HeapPageId pid = new HeapPageId(heapFile.getId(), pageIndex++);
-        //getPage is returning null
-        HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(this.tid, pid, Permissions.READ_ONLY);
-        tupleIterator = heapPage.iterator();
+        pageId = 0;
+//        HeapPageId pid = new HeapPageId(heapFile.getId(), pageId++);
+//        //getPage is returning null
+//        HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(this.tid, pid, Permissions.READ_ONLY);
+//        tupleIterator = heapPage.iterator();
 
     }
 
@@ -40,8 +81,8 @@ public class HeapFileIterator extends AbstractDbFileIterator {
         if (tupleIterator != null && tupleIterator.hasNext())
             return tupleIterator.next();
         //if there are more pages in the same file
-        if (pageIndex < heapFile.numPages()) {
-            HeapPageId pid = new HeapPageId(heapFile.getId(), pageIndex++);
+        if (pageId < heapFile.numPages()) {
+            HeapPageId pid = new HeapPageId(heapFile.getId(), pageId++);
             HeapPage heapPage = (HeapPage) Database.getBufferPool().getPage(this.tid, pid, Permissions.READ_ONLY);
             tupleIterator = heapPage.iterator();
             //have to fix return statement
@@ -55,7 +96,7 @@ public class HeapFileIterator extends AbstractDbFileIterator {
     @Override
     public void close() {
         super.close();
-        pageIndex = 0;
+        pageId = -1;
         tupleIterator = null;
     }
 

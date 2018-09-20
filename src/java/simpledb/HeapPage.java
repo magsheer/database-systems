@@ -322,21 +322,28 @@ public class HeapPage implements Page {
 
         // some code goes here
         Iterator<Tuple> it = new Iterator<Tuple>() {
-            int index = 0;
-
+            int currentIndex = -1;
+            
             @Override
             public Tuple next() {
-                // TODO Auto-generated method stub
-                return tuples[index++];
+                            	
+            	if(hasNext()){
+            		currentIndex++;
+            		return tuples[currentIndex];
+            	}
+            	else
+            		throw new NoSuchElementException();
             }
 
             @Override
             public boolean hasNext() {
-                // TODO Auto-generated method stub
-                while (index < numSlots && !isSlotUsed(index)) {
-                    index++;
+                
+            	int nextIndex = currentIndex + 1;
+                while (nextIndex < numSlots && !isSlotUsed(nextIndex)) {
+                    currentIndex++;
+                    nextIndex = currentIndex + 1;
                 }
-                return index < numSlots;
+                return nextIndex < numSlots;
             }
 
             @Override
