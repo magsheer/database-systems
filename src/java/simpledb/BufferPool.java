@@ -1,5 +1,7 @@
 package simpledb;
 
+import com.sun.xml.internal.bind.v2.TODO;
+
 import java.io.*;
 
 import java.util.Map;
@@ -81,11 +83,11 @@ public class BufferPool {
             throws TransactionAbortedException, DbException {
         // some code goes here
         if (bufferPoolMap.containsKey(pid))
-        	return bufferPoolMap.get(pid);
+            return bufferPoolMap.get(pid);
         else {
-        	int td = pid.getTableId();
-        	DbFile db = Database.getCatalog().getDatabaseFile(td);
-        	Page p = db.readPage(pid);
+            int td = pid.getTableId();
+            DbFile db = Database.getCatalog().getDatabaseFile(td);
+            Page p = db.readPage(pid);
             bufferPoolMap.put(pid, p);
             return p;
         }
@@ -186,6 +188,13 @@ public class BufferPool {
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
         // not necessary for lab1
+        bufferPoolMap.forEach((pageId, page) -> {
+            try {
+                flushPage(pageId);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
 
     }
 
@@ -211,6 +220,13 @@ public class BufferPool {
     private synchronized void flushPage(PageId pid) throws IOException {
         // some code goes here
         // not necessary for lab1
+        Page page = bufferPoolMap.get(pid);
+        int tableId = pid.getTableId();
+        DbFile databaseFile = Database.getCatalog().getDatabaseFile(tableId);
+        databaseFile.writePage(page);
+
+        page.markDirty(true, new TransactionId());
+
     }
 
     /**
@@ -228,6 +244,18 @@ public class BufferPool {
     private synchronized void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
+        PageId pidToBeRemoved = null;
+        bufferPoolMap.forEach((pageId, page) -> {
+            //TODO: LRU/MRU/LIFO/FIFO to get pidToBeRemoved
+        });
+
+        try {
+            flushPage(pidToBeRemoved);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        bufferPoolMap.remove(pidToBeRemoved);
     }
 
 }
