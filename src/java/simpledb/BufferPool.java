@@ -1,11 +1,10 @@
 package simpledb;
 
-import com.sun.xml.internal.bind.v2.TODO;
-
 import java.io.*;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.WeakHashMap;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -26,6 +25,7 @@ public class BufferPool {
 
     private static int pageSize = PAGE_SIZE;
     Map<PageId, Page> bufferPoolMap;
+    Map<Object, Object> LRUdata;
     private int numPages;
 
     /**
@@ -43,7 +43,17 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         this.numPages = numPages;
-        bufferPoolMap = new ConcurrentHashMap<>(numPages);
+        LRUdata = new WeakHashMap<>();
+        bufferPoolMap = new LinkedHashMap<PageId, Page>() {
+            @Override
+            protected boolean removeEldestEntry(final Map.Entry eldest) {
+                if (size() > numPages) {
+                    LRUdata.clear();
+                    LRUdata.put(eldest.getKey(), eldest.getValue());
+                }
+                return true;
+            }
+        };
     }
 
     public int getNumPages() {
@@ -223,9 +233,9 @@ public class BufferPool {
         Page page = bufferPoolMap.get(pid);
         int tableId = pid.getTableId();
         DbFile databaseFile = Database.getCatalog().getDatabaseFile(tableId);
-        databaseFile.writePage(page);
-
-        page.markDirty(true, new TransactionId());
+        if (page.isDirty() != null)
+            databaseFile.writePage(page);
+        page.markDirty(false, null);
 
     }
 
@@ -244,18 +254,18 @@ public class BufferPool {
     private synchronized void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
-        PageId pidToBeRemoved = null;
         bufferPoolMap.forEach((pageId, page) -> {
             //TODO: LRU/MRU/LIFO/FIFO to get pidToBeRemoved
+            if (LRUdata.containsKey(pageId)) {
+                LRUdata.remove(pageId);
+                try {
+                    flushPage(pageId);
+                   bufferPoolMap.remove(pageId);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
         });
-
-        try {
-            flushPage(pidToBeRemoved);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        bufferPoolMap.remove(pidToBeRemoved);
     }
 
 }
