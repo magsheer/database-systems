@@ -255,14 +255,69 @@ public class BTreeFile implements DbFile {
     protected BTreeLeafPage splitLeafPage(TransactionId tid, HashMap<PageId, Page> dirtypages, BTreeLeafPage page, Field field)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        //
+        
+        
+        //create new page
+        //new page will be the left sibling
+        BTreeLeafPage newPage = (BTreeLeafPage) getEmptyPage(tid, dirtypages, BTreePageId.LEAF);
+        
+        Iterator<Tuple> itr = page.iterator();
+        //have to move half the tuples 
+        
         // Split the leaf page by adding a new page on the right of the existing
-        // page and moving half of the tuples to the new page.  Copy the middle key up
-        // into the parent page, and recursively split the parent as needed to accommodate
-        // the new entry.  getParentWithEmtpySlots() will be useful here.  Don't forget to update
-        // the sibling pointers of all the affected leaf pages.  Return the page into which a
+        // page and moving half of the tuples to the new page. 
+                
+        int newsiblingsize = page.getNumTuples() /2;
+        
+//        Tuple tuple = null;
+//    	//move it to middle
+//    	for(int i =0; i<newsiblingsize; i++) {
+//    		if(itr.hasNext())
+//    			tuple=itr.next();
+//    	} keeping track of the middle element to move to the parent?
+    	
+        Tuple tuple = null;
+
+        //copy the first half
+        int counter = 0;
+        while(itr.hasNext() && counter<newsiblingsize) {
+            tuple = itr.next();
+            page.deleteTuple(tuple);
+            newPage.insertTuple(tuple);
+            counter++;
+        }
+        
+        //Don't forget to update
+         // the sibling pointers of all the affected leaf pages.  
+        
+        newPage.setLeftSiblingId(page.getLeftSiblingId());
+        //if a left sibling exists set it's rightptr to point to the new leaf page
+        if(page.getLeftSiblingId() != null) {
+            BTreeLeafPage existingoldright = (BTreeLeafPage) getPage(tid, dirtypages, page.getLeftSiblingId(), Permissions.READ_WRITE);
+            existingoldright.setRightSiblingId(newPage.getId());
+        }
+        
+        //set the leaf linking
+        newPage.setRightSiblingId(page.getId());
+        page.setLeftSiblingId(newPage.getId());
+        
+        //Copy the middle key up
+         // into the parent page, and recursively split the parent as needed to accommodate
+         // the new entry.  getParentWithEmtpySlots() will be useful here. 
+        Field f = itr.next().getField(keyField);
+        
+        BTreeInternalPage parent = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), field);
+        
+        parent.insertEntry(new BTreeEntry(f,newPage.getId(),page.getId()));
+        
+        updateParentPointers(tid, dirtypages, parent);
+        //Return the page into which a
         // tuple with the given key field should be inserted.
-        return null;
+        
+        if(field.compare(Op.GREATER_THAN_OR_EQ, f))
+            return page;
+        
+        return newPage;
 
     }
 
@@ -291,7 +346,44 @@ public class BTreeFile implements DbFile {
                                                   BTreeInternalPage page, Field field)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        return null;
+    	//create new page
+        //new page will be the left sibling
+        BTreeInternalPage newPage = (BTreeInternalPage) getEmptyPage(tid, dirtypages, BTreePageId.INTERNAL);
+        
+        Iterator<BTreeEntry> itr = page.iterator();
+        
+        int newsiblingsize = page.getNumEntries() /2;
+        
+        BTreeEntry btreeEntry = null;
+
+        //copy the first half
+        int counter = 0;
+        while(itr.hasNext() && counter<newsiblingsize) {
+        	btreeEntry = itr.next();
+            page.deleteKeyAndLeftChild(btreeEntry);
+            newPage.insertEntry(btreeEntry);
+            counter++;
+        }
+
+//        The child pointers of the new parent entry should point to the two internal pages resulting
+//      * from the split. Update parent pointers as needed.
+        BTreeEntry newParent = itr.next();
+        page.deleteKeyAndLeftChild(newParent);
+        newParent.setLeftChild(newPage.getId());
+        newParent.setRightChild(page.getId());
+        Field f = newParent.getKey();
+        
+        BTreeInternalPage parent = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), field);
+        
+        parent.insertEntry(newParent);
+        
+        updateParentPointers(tid, dirtypages, parent);
+        
+        
+        if(field.compare(Op.GREATER_THAN_OR_EQ, f))
+            return page;
+        
+        return newPage;
     }
 
     /**
@@ -926,7 +1018,7 @@ public class BTreeFile implements DbFile {
         rf.write(BTreePage.createEmptyPageData());
         rf.close();
 
-        // make sure the page is not in the buffer pool	or in the local cache
+        // make sure the page is not in the buffer pool or in the local cache
         Database.getBufferPool().discardPage(newPageId);
         dirtypages.remove(newPageId);
 
@@ -951,22 +1043,22 @@ public class BTreeFile implements DbFile {
         // if this is the last page in the file (and not the only page), just
         // truncate the file
         // @TODO: Commented out because we should probably do this somewhere else in case the transaction aborts....
-//		synchronized(this) {
-//			if(emptyPageNo == numPages()) {
-//				if(emptyPageNo <= 1) {
-//					// if this is the only page in the file, just return.
-//					// It just means we have an empty root page
-//					return;
-//				}
-//				long newSize = f.length() - BufferPool.getPageSize();
-//				FileOutputStream fos = new FileOutputStream(f, true);
-//				FileChannel fc = fos.getChannel();
-//				fc.truncate(newSize);
-//				fc.close();
-//				fos.close();
-//				return;
-//			}
-//		}
+//      synchronized(this) {
+//          if(emptyPageNo == numPages()) {
+//              if(emptyPageNo <= 1) {
+//                  // if this is the only page in the file, just return.
+//                  // It just means we have an empty root page
+//                  return;
+//              }
+//              long newSize = f.length() - BufferPool.getPageSize();
+//              FileOutputStream fos = new FileOutputStream(f, true);
+//              FileChannel fc = fos.getChannel();
+//              fc.truncate(newSize);
+//              fc.close();
+//              fos.close();
+//              return;
+//          }
+//      }
 
         // otherwise, get a read lock on the root pointer page and use it to locate
         // the first header page
