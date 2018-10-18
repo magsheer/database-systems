@@ -1,7 +1,7 @@
 package simpledb;
 
 import java.io.*;
-
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -95,6 +95,8 @@ public class BufferPool {
         if (bufferPoolMap.containsKey(pid))
             return bufferPoolMap.get(pid);
         else {
+        	if(bufferPoolMap.size()==numPages)
+        		evictPage();
             int td = pid.getTableId();
             DbFile db = Database.getCatalog().getDatabaseFile(td);
             Page p = db.readPage(pid);
@@ -168,7 +170,11 @@ public class BufferPool {
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        // not necessary for lab1
+         DbFile dbfile = Database.getCatalog().getDatabaseFile(tableId);
+         ArrayList<Page> pages= dbfile.insertTuple(tid, t);
+         for (int x=0; x<pages.size(); x++) {
+        	 pages.get(x).markDirty(true, tid);
+         }
     }
 
     /**
@@ -187,7 +193,13 @@ public class BufferPool {
     public void deleteTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        // not necessary for lab1
+        PageId pid = t.getRecordId().getPageId();
+        int tableId = pid.getTableId();
+        DbFile dbfile = Database.getCatalog().getDatabaseFile(tableId);
+        ArrayList<Page> pages= dbfile.insertTuple(tid, t);
+        for (int x=0; x<pages.size(); x++) {
+       	 pages.get(x).markDirty(true, tid);
+        }
     }
 
     /**
