@@ -1,10 +1,8 @@
 package simpledb;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.WeakHashMap;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -25,7 +23,7 @@ public class BufferPool {
 
     private static int pageSize = PAGE_SIZE;
     Map<PageId, Page> bufferPoolMap;
-    Map<Object, Object> LRUdata;
+    Stack<PageId> LRUdata;
     private int numPages;
 
     /**
@@ -43,17 +41,18 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         this.numPages = numPages;
-        LRUdata = new WeakHashMap<>();
-        bufferPoolMap = new LinkedHashMap<PageId, Page>() {
+        LRUdata = new Stack<>();
+        bufferPoolMap = new ConcurrentHashMap<>();
+      /*  bufferPoolMap = new LinkedHashMap<PageId, Page>() {
             @Override
             protected boolean removeEldestEntry(final Map.Entry eldest) {
-                if (size() > numPages) {
+                if (size() == numPages) {
                     LRUdata.clear();
                     LRUdata.put(eldest.getKey(), eldest.getValue());
                 }
                 return false;
             }
-        };
+        };*/
     }
 
     public int getNumPages() {
@@ -95,12 +94,13 @@ public class BufferPool {
         if (bufferPoolMap.containsKey(pid))
             return bufferPoolMap.get(pid);
         else {
-        	if(bufferPoolMap.size()==numPages)
-        		evictPage();
+            if (bufferPoolMap.size() == numPages)
+                evictPage();
             int td = pid.getTableId();
             DbFile db = Database.getCatalog().getDatabaseFile(td);
             Page p = db.readPage(pid);
             bufferPoolMap.put(pid, p);
+            LRUdata.push((PageId) pid);
             return p;
         }
 
@@ -170,11 +170,11 @@ public class BufferPool {
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-         DbFile dbfile = Database.getCatalog().getDatabaseFile(tableId);
-         ArrayList<Page> pages= dbfile.insertTuple(tid, t);
-         for (int x=0; x<pages.size(); x++) {
-        	 pages.get(x).markDirty(true, tid);
-         }
+        DbFile dbfile = Database.getCatalog().getDatabaseFile(tableId);
+        ArrayList<Page> pages = dbfile.insertTuple(tid, t);
+        for (int x = 0; x < pages.size(); x++) {
+            pages.get(x).markDirty(true, tid);
+        }
     }
 
     /**
@@ -196,9 +196,9 @@ public class BufferPool {
         PageId pid = t.getRecordId().getPageId();
         int tableId = pid.getTableId();
         DbFile dbfile = Database.getCatalog().getDatabaseFile(tableId);
-        ArrayList<Page> pages= dbfile.insertTuple(tid, t);
-        for (int x=0; x<pages.size(); x++) {
-       	 pages.get(x).markDirty(true, tid);
+        ArrayList<Page> pages = dbfile.insertTuple(tid, t);
+        for (int x = 0; x < pages.size(); x++) {
+            pages.get(x).markDirty(true, tid);
         }
     }
 
@@ -268,11 +268,11 @@ public class BufferPool {
         // not necessary for lab1
         bufferPoolMap.forEach((pageId, page) -> {
             //TODO: LRU/MRU/LIFO/FIFO to get pidToBeRemoved
-            if (LRUdata.containsKey(pageId)) {
-                LRUdata.remove(pageId);
+            if (LRUdata.peek() == pageId) {
+                LRUdata.pop();
                 try {
                     flushPage(pageId);
-                   bufferPoolMap.remove(pageId);
+                    bufferPoolMap.remove(pageId);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }

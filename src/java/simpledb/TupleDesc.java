@@ -11,8 +11,7 @@ public class TupleDesc implements Serializable {
     private Type[] typeAr;
     String[] fieldAr;
     private ArrayList<TDItem> tdItems = new ArrayList<>();
-    ;
-
+ 
     /**
      * A help class to facilitate organizing the information of each field
      */
