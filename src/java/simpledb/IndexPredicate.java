@@ -45,7 +45,7 @@ public class IndexPredicate implements Serializable {
     */
     public boolean equals(IndexPredicate ipd) {
         // some code goes here
-        return (fvalue.equals(ipd.fvalue) && op.equals(ipd.op));
+        return (fvalue.equals(ipd.getField()) && op.name().equals(ipd.getOp().name()));
     }
 
 }

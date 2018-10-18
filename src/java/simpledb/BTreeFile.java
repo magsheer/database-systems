@@ -213,11 +213,8 @@ public class BTreeFile implements DbFile {
 			BTreeEntry next = null;
 			while(itr.hasNext()) {
 				next = itr.next();
-				
-				if(next.getKey().compare(Op.LESS_THAN_OR_EQ, f))
-					return findLeafPage(tid, dirtypages, next.getLeftChild(), Permissions.READ_ONLY, f);
+				return findLeafPage(tid, dirtypages, next.getLeftChild(), Permissions.READ_ONLY, f);
 			}
-			
 			//change this
 			return null;
 	}

@@ -51,7 +51,7 @@ public class BufferPool {
                     LRUdata.clear();
                     LRUdata.put(eldest.getKey(), eldest.getValue());
                 }
-                return true;
+                return false;
             }
         };
     }
