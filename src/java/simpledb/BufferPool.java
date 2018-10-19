@@ -22,8 +22,8 @@ public class BufferPool {
     private static final int PAGE_SIZE = 4096;
 
     private static int pageSize = PAGE_SIZE;
-    Map<PageId, Page> bufferPoolMap;
-    Stack<PageId> LRUdata;
+    private Map<PageId, Page> bufferPoolMap;
+    private Stack<PageId> LRUdata;
     private int numPages;
 
     /**
@@ -172,8 +172,8 @@ public class BufferPool {
         // some code goes here
         DbFile dbfile = Database.getCatalog().getDatabaseFile(tableId);
         ArrayList<Page> pages = dbfile.insertTuple(tid, t);
-        for (int x = 0; x < pages.size(); x++) {
-            pages.get(x).markDirty(true, tid);
+        for (Page page : pages) {
+            page.markDirty(true, tid);
         }
     }
 
@@ -193,12 +193,9 @@ public class BufferPool {
     public void deleteTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        PageId pid = t.getRecordId().getPageId();
-        int tableId = pid.getTableId();
-        DbFile dbfile = Database.getCatalog().getDatabaseFile(tableId);
-        ArrayList<Page> pages = dbfile.insertTuple(tid, t);
-        for (int x = 0; x < pages.size(); x++) {
-            pages.get(x).markDirty(true, tid);
+        DbFile f = Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());
+        for (Page p : f.deleteTuple(tid, t)) {
+            bufferPoolMap.get(p.getId()).markDirty(true, tid);
         }
     }
 
