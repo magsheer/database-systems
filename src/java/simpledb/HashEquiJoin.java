@@ -11,6 +11,7 @@ public class HashEquiJoin extends Operator {
     private final JoinPredicate p;
     private DbIterator child1;
     private DbIterator child2;
+    Map<Field, ArrayList<Tuple>> equiHashMap = new HashMap<>();
 
     /**
      * Constructor. Accepts to children to join and the predicate to join them
@@ -34,23 +35,7 @@ public class HashEquiJoin extends Operator {
 
     public TupleDesc getTupleDesc() {
         // some code goes here
-        TupleDesc td1 = child1.getTupleDesc();
-        TupleDesc td2 = child2.getTupleDesc();
-        Type[] typeAr = new Type[td1.numFields() + td2.numFields()];
-        String[] fieldAr = new String[td1.numFields() + td2.numFields()];
-        int i;
-
-        for (i = 0; i < td1.numFields(); i++) {
-            typeAr[i] = td1.getFieldType(i);
-            fieldAr[i] = td1.getFieldName(i);
-        }
-
-        for (int j = 0; j < td2.numFields(); j++) {
-            typeAr[i] = td2.getFieldType(j);
-            fieldAr[i] = td2.getFieldName(j);
-            i++;
-        }
-        return new TupleDesc(typeAr, fieldAr);
+        return TupleDesc.merge(child1.getTupleDesc(), child2.getTupleDesc());
     }
 
     public String getJoinField1Name() {
@@ -103,7 +88,7 @@ public class HashEquiJoin extends Operator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if (listIt.hasNext())
+        if (listIt != null && listIt.hasNext())
             return listIt.next();
         else
             return null;
