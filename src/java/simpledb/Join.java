@@ -63,11 +63,15 @@ public class Join extends Operator {
             TransactionAbortedException {
         // some code goes here
         super.open();
+        child1.open();
+        child2.open();
     }
 
     public void close() {
         // some code goes here
         super.close();
+        child1.close();
+        child2.close();
 
     }
 

@@ -89,10 +89,8 @@ public class Tuple implements Serializable {
         // some code goes here
     	
     	StringBuilder toReturn = new StringBuilder();
-    	
-    	for(int i =0; i < this.fieldList.size(); i++)
-    		toReturn.append(fieldList.get(i).toString() + " ");
-    	
+
+        for (Field aFieldList : this.fieldList) toReturn.append(aFieldList.toString()).append(" ");
     	return toReturn.toString().trim();    	
 //        throw new UnsupportedOperationException("Implement this");
     }

@@ -97,7 +97,7 @@ public class HashEquiJoin extends Operator {
     @Override
     public DbIterator[] getChildren() {
         // some code goes here
-        return new DbIterator[]{child1, child2};
+        return new DbIterator[]{this.child1, this.child2};
     }
 
     @Override

@@ -1,5 +1,7 @@
 package simpledb;
 
+import java.util.NoSuchElementException;
+
 /**
  * Knows how to compute some aggregate over a set of IntFields.
  */
@@ -50,8 +52,37 @@ public class IntegerAggregator implements Aggregator {
      */
     public DbIterator iterator() {
         // some code goes here
-        throw new
-                UnsupportedOperationException("please implement me for lab3");
+        return new DbIterator() {
+            @Override
+            public void open() throws DbException, TransactionAbortedException {
+
+            }
+
+            @Override
+            public boolean hasNext() throws DbException, TransactionAbortedException {
+                return false;
+            }
+
+            @Override
+            public Tuple next() throws DbException, TransactionAbortedException, NoSuchElementException {
+                return null;
+            }
+
+            @Override
+            public void rewind() throws DbException, TransactionAbortedException {
+
+            }
+
+            @Override
+            public TupleDesc getTupleDesc() {
+                return null;
+            }
+
+            @Override
+            public void close() {
+
+            }
+        };
     }
 
 }
