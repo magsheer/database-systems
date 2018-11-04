@@ -11,7 +11,7 @@ import java.util.*;
 public class Tuple implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    
+
     private TupleDesc tupleDesc;
     private RecordId recordId;
     private ArrayList<Field> fieldList = new ArrayList<Field>();
@@ -25,8 +25,8 @@ public class Tuple implements Serializable {
      */
     public Tuple(TupleDesc td) {
         this.tupleDesc = td;
-        
-        for (int i = 0; i <= td.numFields(); i++)
+
+        for (int i = 0; i < td.numFields(); i++)
         	fieldList.add(i, null);
     }
 
@@ -85,13 +85,14 @@ public class Tuple implements Serializable {
      *
      * where \t is any whitespace (except a newline)
      */
+    @Override
     public String toString() {
         // some code goes here
-    	
+
     	StringBuilder toReturn = new StringBuilder();
 
         for (Field aFieldList : this.fieldList) toReturn.append(aFieldList.toString()).append(" ");
-    	return toReturn.toString().trim();    	
+    	return toReturn.toString().trim();
 //        throw new UnsupportedOperationException("Implement this");
     }
 

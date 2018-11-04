@@ -277,8 +277,8 @@ public class HeapPage implements Page {
         int slot = -1;
         boolean slotFound = false;
         for (int i = 0; i < header.length; i++) {
-            for (int bitNum = 0; bitNum < 8; bitNum++) {
-                slot = (i * 8) + bitNum;
+            for (int j = 0; j < 8; j++) {
+                slot = (i * 8) + j;
                 if (!isSlotUsed(slot)) {
                     slotFound = true;
                     break;
@@ -288,7 +288,7 @@ public class HeapPage implements Page {
         }
 
         if (!slotFound || slot == -1)
-            throw new DbException("No Slot available");
+            throw new DbException("No empty slot available");
 
         t.setRecordId(new RecordId(this.pid, slot));
         tuples[slot] = t;
