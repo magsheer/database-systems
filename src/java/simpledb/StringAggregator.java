@@ -1,5 +1,9 @@
 package simpledb;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Knows how to compute some aggregate over a set of StringFields.
  */
@@ -10,6 +14,8 @@ public class StringAggregator implements Aggregator {
     private final Type gbfieldtype;
     private final int afield;
     private final Op what;
+    private Map<Field, Integer> count;
+    private TupleDesc Td;
 
     /**
      * Aggregate constructor
@@ -27,6 +33,17 @@ public class StringAggregator implements Aggregator {
         this.gbfieldtype = gbfieldtype;
         this.afield = afield;
         this.what = what;
+        this.count = new HashMap<>();
+        String[] fields;
+        Type[] types;
+        if (gbfield == -1) {
+            fields = new String[]{"aggregate values"};
+            types = new Type[]{Type.INT_TYPE};
+        } else {
+            fields = new String[]{"group values", "aggregate values"};
+            types = new Type[]{this.gbfieldtype, Type.INT_TYPE};
+        }
+        Td = new TupleDesc(types, fields);
     }
 
     /**
@@ -36,6 +53,14 @@ public class StringAggregator implements Aggregator {
      */
     public void mergeTupleIntoGroup(Tuple tup) {
         // some code goes here
+        Field groupByField = (gbfield == -1) ? null : tup.getField(gbfield);
+
+        if (!count.containsKey(groupByField)) {
+            count.put(groupByField, 0);
+        }
+
+        int currCount = count.get(groupByField);
+        count.put(groupByField, currCount + 1);
     }
 
     /**
@@ -48,7 +73,18 @@ public class StringAggregator implements Aggregator {
      */
     public DbIterator iterator() {
         // some code goes here
-        throw new UnsupportedOperationException("please implement me for lab3");
+        ArrayList<Tuple> tuples = new ArrayList<>();
+        for (Field field : count.keySet()) {
+            int aggregate = count.get(field);
+            Tuple tup = new Tuple(Td);
+            if (gbfield == -1) {
+                tup.setField(0, new IntField(aggregate));
+            } else {
+                tup.setField(0, field);
+                tup.setField(1, new IntField(aggregate));
+            }
+            tuples.add(tup);
+        }
+        return new TupleIterator(Td, tuples);
     }
-
 }

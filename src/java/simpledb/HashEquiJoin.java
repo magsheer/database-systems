@@ -2,6 +2,7 @@ package simpledb;
 
 import java.util.*;
 
+
 /**
  * The Join operator implements the relational join operation.
  */
@@ -11,7 +12,10 @@ public class HashEquiJoin extends Operator {
     private final JoinPredicate p;
     private DbIterator child1;
     private DbIterator child2;
-    Map<Field, ArrayList<Tuple>> equiHashMap = new HashMap<>();
+    private HashMap<Object, ArrayList<Tuple>> equiHashMap = new HashMap<>();
+    private final static int SIZE = 10000;
+    transient private Tuple t1 = null;
+    transient private Tuple t2 = null;
 
     /**
      * Constructor. Accepts to children to join and the predicate to join them
@@ -27,6 +31,7 @@ public class HashEquiJoin extends Operator {
         this.child1 = child1;
         this.child2 = child2;
     }
+
 
     public JoinPredicate getJoinPredicate() {
         // some code goes here
@@ -51,21 +56,41 @@ public class HashEquiJoin extends Operator {
     public void open() throws DbException, NoSuchElementException,
             TransactionAbortedException {
         // some code goes here
+        child1.open();
+        child2.open();
         super.open();
+        populateMap();
+    }
+
+    private boolean populateMap() throws DbException, TransactionAbortedException {
+        int count = 0;
+        equiHashMap.clear();
+        while (child1.hasNext()) {
+            t1 = child1.next();
+            ArrayList<Tuple> list = equiHashMap.computeIfAbsent(t1.getField(p.getField1()), k -> new ArrayList<>());
+            list.add(t1);
+            if (count++ == SIZE)
+                return true;
+        }
+        return count > 0;
     }
 
     public void close() {
         // some code goes here
         super.close();
+        child1.close();
+        child2.close();
+        this.listIt = null;
+        this.equiHashMap.clear();
     }
 
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
-        close();
-        open();
+        child1.rewind();
+        child2.rewind();
     }
 
-    transient Iterator<Tuple> listIt = null;
+    private transient Iterator<Tuple> listIt = null;
 
 
     /**
@@ -86,12 +111,36 @@ public class HashEquiJoin extends Operator {
      * @return The next matching tuple.
      * @see JoinPredicate#filter
      */
+
+    private Tuple populateList() throws TransactionAbortedException, DbException {
+        t1 = listIt.next();
+
+        Tuple mergedTuple = new Tuple(getTupleDesc());
+        for (int i = 0; i < t1.getTupleDesc().numFields(); i++)
+            mergedTuple.setField(i, t1.getField(i));
+        for (int j = 0; j < t2.getTupleDesc().numFields(); j++)
+            mergedTuple.setField(t1.getTupleDesc().numFields() + j, t2.getField(j));
+        return mergedTuple;
+
+    }
+
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
-        if (listIt != null && listIt.hasNext())
-            return listIt.next();
-        else
-            return null;
+        if (listIt != null && listIt.hasNext()) {
+            return populateList();
+        }
+        while (child2.hasNext()) {
+            t2 = child2.next();
+            ArrayList<Tuple> list = equiHashMap.get(t2.getField(p.getField2()));
+            if (list == null) continue;
+            listIt = list.iterator();
+            return populateList();
+        }
+        child2.rewind();
+        if (populateMap()) {
+            return fetchNext();
+        }
+        return null;
     }
 
     @Override
