@@ -93,8 +93,8 @@ public class IntHistogram {
             return 0.0;
         if (bucket >= buckets)
             return 0.0;
-        int height = bucketArray[bucket];
-        return ((double) height / mod) / count;
+        int h = bucketArray[bucket];
+        return ((double) h / mod) / count;
     }
 
     private double estimateSelectivityForComparison(Predicate.Op op, int v) {
@@ -156,6 +156,8 @@ public class IntHistogram {
      */
     public String toString() {
         // some code goes here
-        return null;
+        StringBuilder s = new StringBuilder();
+        for (int b : bucketArray) s.append(b);
+        return s.toString();
     }
 }
