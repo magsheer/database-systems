@@ -220,6 +220,11 @@ public class JoinOptimizer {
                 planCache.addPlan(nodes, costCard.cost, costCard.card, costCard.plan);
             }
         }
+
+        if (explain) {
+            printJoins(planCache.getOrder(joinNodes), planCache, stats, filterSelectivities);
+        }
+
         return planCache.getOrder(joinNodes);
     }
 
