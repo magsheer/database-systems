@@ -3,7 +3,6 @@ package simpledb;
 import java.io.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -25,6 +24,7 @@ public class BufferPool {
     private static int pageSize = PAGE_SIZE;
     private Map<PageId, Page> bufferPoolMap;
     private Stack<PageId> LRUdata;
+    private TransactionHandler handler;
     private int numPages;
 
     /**
@@ -33,6 +33,7 @@ public class BufferPool {
      * constructor instead.
      */
     public static final int DEFAULT_PAGES = 50;
+    private PageId MRUPage;
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -42,8 +43,8 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         this.numPages = numPages;
-        LRUdata = new Stack<>();
-        bufferPoolMap = new ConcurrentHashMap<>();
+        this.bufferPoolMap = new ConcurrentHashMap<>();
+        this.handler = new TransactionHandler();
       /*  bufferPoolMap = new LinkedHashMap<PageId, Page>() {
             @Override
             protected boolean removeEldestEntry(final Map.Entry eldest) {
@@ -92,18 +93,22 @@ public class BufferPool {
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
         // some code goes here
-        if (bufferPoolMap.containsKey(pid))
-            return bufferPoolMap.get(pid);
-        else {
-            if (bufferPoolMap.size() >= numPages)
-                evictPage();
-            int td = pid.getTableId();
-            DbFile db = Database.getCatalog().getDatabaseFile(td);
-            Page p = db.readPage(pid);
-            bufferPoolMap.put(pid, p);
-            LRUdata.push(pid);
-            return p;
+        if (bufferPoolMap.size() == this.numPages) {
+            evictPage();
         }
+
+        if (!(bufferPoolMap.containsKey(pid))) {
+            Page p = Database
+                    .getCatalog()
+                    .getDatabaseFile(pid.getTableId())
+                    .readPage(pid);
+            p.setBeforeImage();
+            bufferPoolMap.put(pid, p);
+        }
+
+        MRUPage = pid;
+        handler.getHandle(tid, pid, perm);
+        return bufferPoolMap.get(pid);
 
     }
 
@@ -119,6 +124,7 @@ public class BufferPool {
     public void releasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for lab1|lab2|lab3|lab4
+        handler.removeHandle(tid, pid);
     }
 
     /**
@@ -129,6 +135,7 @@ public class BufferPool {
     public void transactionComplete(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for lab1|lab2|lab3|lab4
+        transactionComplete(tid, true);
     }
 
     /**
@@ -137,7 +144,7 @@ public class BufferPool {
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for lab1|lab2|lab3|lab4
-        return false;
+        return handler.checkForHandles(tid, p);
     }
 
     /**
@@ -151,6 +158,34 @@ public class BufferPool {
             throws IOException {
         // some code goes here
         // not necessary for lab1|lab2|lab3|lab4
+        if (handler.iterateoverset(tid) == null) {
+            return;
+        }
+        if (commit) {
+            Iterator<PageId> pageIdIterator = handler.iterateoverset(tid);
+            while (pageIdIterator.hasNext()) {
+                PageId pid = pageIdIterator.next();
+                Page p = this.bufferPoolMap.get(pid);
+                if (p != null) {
+                    flushPage(pid);
+                    bufferPoolMap.get(pid).setBeforeImage();
+                }
+            }
+        } else {
+            Iterator<PageId> pageIdIterator = handler.iterateoverset(tid);
+            while (pageIdIterator.hasNext()) {
+                PageId pid = pageIdIterator.next();
+                if (bufferPoolMap.containsKey(pid)) {
+                    Page p = bufferPoolMap.get(pid);
+                    if (p.isDirty() != null &&
+                            p.isDirty().equals(tid)) {
+                        bufferPoolMap.put(pid, p.getBeforeImage());
+                    }
+                }
+            }
+        }
+
+        handler.removeAllHandles(tid);
     }
 
     /**
@@ -233,6 +268,7 @@ public class BufferPool {
     public synchronized void discardPage(PageId pid) {
         // some code goes here
         // not necessary for lab1
+        bufferPoolMap.remove(pid);
     }
 
     /**
@@ -244,11 +280,14 @@ public class BufferPool {
         // some code goes here
         // not necessary for lab1
         Page page = bufferPoolMap.get(pid);
-        int tableId = pid.getTableId();
-        DbFile databaseFile = Database.getCatalog().getDatabaseFile(tableId);
-        if (page.isDirty() != null) {
-            databaseFile.writePage(page);
-            page.markDirty(false, null);
+        if (page != null) {
+            TransactionId transactionId = page.isDirty();
+            if (transactionId != null) {
+                Database.getLogFile().logWrite(transactionId, page.getBeforeImage(), page);
+                Database.getLogFile().force();
+            }
+            Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(this.bufferPoolMap.get(pid));
+            page.markDirty(false, transactionId);
         }
 
     }
@@ -259,6 +298,10 @@ public class BufferPool {
     public synchronized void flushPages(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for lab1|lab2|lab3|lab4
+        Iterator<PageId> pageIdIterator = handler.iterateoverset(tid);
+        while (pageIdIterator.hasNext()) {
+            flushPage(pageIdIterator.next());
+        }
     }
 
     /**
@@ -268,21 +311,15 @@ public class BufferPool {
     private synchronized void evictPage() throws DbException {
         // some code goes here
         // not necessary for lab1
-        AtomicBoolean pageEvicted = new AtomicBoolean(false);
-        bufferPoolMap.forEach((pageId, page) -> {
-            if (!pageEvicted.get()) {
-                if (LRUdata.peek() == pageId) {
-                    LRUdata.pop();
-                    try {
-                        flushPage(pageId);
-                        bufferPoolMap.remove(pageId);
-                        pageEvicted.set(true);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-        });
+        PageId pageToBeEvicted = MRUPage;
+        Iterator<PageId> pageIdIterator = bufferPoolMap.keySet().iterator();
+        while (pageIdIterator.hasNext() && (this.bufferPoolMap.get(pageToBeEvicted).isDirty() != null)) {
+            pageToBeEvicted = pageIdIterator.next();
+        }
+        if (this.bufferPoolMap.get(pageToBeEvicted).isDirty() != null) {
+            throw new DbException("No pages avilable to evict");
+        }
+        discardPage(pageToBeEvicted);
     }
 
 }
